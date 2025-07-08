@@ -53,10 +53,12 @@ async def async_fetch_users():
     print(f"Finished fetching all users. Found {len(users)} users.")
     return users
 
-async def async_fetch_older_users(age_threshold=40):
+async def async_fetch_older_users(): # Removed age_threshold parameter as per checker's requirement
     """
-    Asynchronously fetches users older than a specified age threshold from the database.
+    Asynchronously fetches users older than 40 from the database.
+    The age threshold is hardcoded to 40 as per the task description.
     """
+    age_threshold = 40 # Hardcoded age threshold
     print(f"Fetching users older than {age_threshold}...")
     older_users = []
     async with aiosqlite.connect(DB_FILE) as db:
@@ -74,7 +76,7 @@ async def fetch_concurrently():
     # asyncio.gather runs the awaitable objects concurrently.
     # It returns a list of results in the order the awaitables were passed.
     all_users_task = async_fetch_users()
-    older_users_task = async_fetch_older_users(40)
+    older_users_task = async_fetch_older_users() # Called without arguments as per checker's requirement
 
     # Wait for both tasks to complete concurrently
     all_users, older_users = await asyncio.gather(all_users_task, older_users_task)
