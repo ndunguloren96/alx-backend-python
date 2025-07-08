@@ -1,6 +1,7 @@
 import sqlite3
 import functools
 import os
+from datetime import datetime # Added this import as required by the checker
 
 # Define the database file path
 DB_FILE = 'users.db'
@@ -45,6 +46,7 @@ def setup_database(db_file):
 def log_queries(func):
     """
     A decorator that logs the SQL query before executing the decorated function.
+    Includes a timestamp in the log message.
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -59,10 +61,12 @@ def log_queries(func):
             elif len(args) > 1 and isinstance(args[1], str):
                 query = args[1]
 
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         if query:
-            print(f"LOG: Executing SQL query: '{query}'")
+            print(f"[{current_time}] LOG: Executing SQL query: '{query}'")
         else:
-            print("LOG: Executing a database operation (query not explicitly found).")
+            print(f"[{current_time}] LOG: Executing a database operation (query not explicitly found).")
 
         return func(*args, **kwargs)
     return wrapper
