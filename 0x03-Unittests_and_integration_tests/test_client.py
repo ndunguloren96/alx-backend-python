@@ -6,31 +6,14 @@ import unittest
 from parameterized import parameterized, parameterized_class
 from unittest.mock import patch, Mock, PropertyMock
 from client import GithubOrgClient
-# Assuming fixtures.py content is available or copied here for context
-# In a real scenario, you would import these from fixtures.py
-# from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
+from fixtures import TEST_PAYLOAD
 
 
-# Manually define fixtures based on typical problem context if import fails
-# In a real setup, these would come from fixtures.py
-org_payload = {"repos_url": "https://api.github.com/orgs/google/repos"}
-repos_payload = [
-    {"name": "episodes.dart", "license": {"key": "apache-2.0"}},
-    {"name": "firmata.py", "license": {"key": "apache-2.0"}},
-    {"name": "open-location-code", "license": {"key": "apache-2.0"}},
-    {"name": "dot-chacha", "license": {"key": "mit"}},
-]
-expected_repos = [
-    "episodes.dart",
-    "firmata.py",
-    "open-location-code",
-    "dot-chacha",
-]
-apache2_repos = [
-    "episodes.dart",
-    "firmata.py",
-    "open-location-code",
-]
+# Extract fixtures from TEST_PAYLOAD for clarity in parameterized_class
+org_payload = TEST_PAYLOAD[0][0]
+repos_payload = TEST_PAYLOAD[0][1]
+expected_repos = TEST_PAYLOAD[0][2]
+apache2_repos = TEST_PAYLOAD[0][3]
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -75,13 +58,15 @@ class TestGithubOrgClient(unittest.TestCase):
         Tests that public_repos returns the expected list of repositories
         and that mocked methods are called once.
         """
-        repos_payload = [
+        # Define a sample payload for get_json
+        repos_payload_mock = [
             {"name": "repo1"},
             {"name": "repo2"},
             {"name": "repo3"}
         ]
-        mock_get_json.return_value = repos_payload
+        mock_get_json.return_value = repos_payload_mock
 
+        # Define a mock URL for _public_repos_url
         public_repos_url = "http://example.com/repos"
 
         with patch('client.GithubOrgClient._public_repos_url',
@@ -124,14 +109,23 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         """
         Sets up class-level mocks for requests.get to simulate API calls.
         """
-        config = {
-            'return_value.json.side_effect': [
-                cls.org_payload,
-                cls.repos_payload,
-                cls.repos_payload, # For apache2 repos call if it happens
-            ]
+        # Create a dictionary to map URLs to their corresponding payloads
+        cls.get_payloads = {
+            "https://api.github.com/orgs/google": cls.org_payload,
+            cls.org_payload["repos_url"]: cls.repos_payload,
         }
-        cls.get_patcher = patch('requests.get', **config)
+
+        def mock_get_json_side_effect(url: str) -> Mock:
+            """
+            Custom side effect for requests.get() to return
+            different mock responses based on the URL.
+            """
+            mock_response = Mock()
+            # Ensure .json() is called on the response and returns the payload
+            mock_response.json.return_value = cls.get_payloads[url]
+            return mock_response
+
+        cls.get_patcher = patch('requests.get', side_effect=mock_get_json_side_effect)
         cls.mock_get = cls.get_patcher.start()
 
     @classmethod
@@ -143,50 +137,40 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
     def test_public_repos(self) -> None:
         """
-        Tests public_repos method with integration setup.
+        Tests public_repos method without a license filter,
+        ensuring it returns the expected repositories and
+        makes the correct API calls.
         """
+        # Reset mock calls for each test method to ensure accurate counting
+        self.mock_get.reset_mock()
+
         client = GithubOrgClient("google")
         self.assertEqual(client.public_repos(), self.expected_repos)
-        self.assertEqual(
-            self.mock_get.call_args_list[0][0][0],
-            "https://api.github.com/orgs/google"
-        )
-        self.assertEqual(
-            self.mock_get.call_args_list[1][0][0],
-            "https://api.github.com/orgs/google/repos"
-        )
-        self.assertEqual(self.mock_get.call_count, 2) # Org call + repos call
+
+        # Verify calls
+        expected_calls = [
+            unittest.mock.call("https://api.github.com/orgs/google"),
+            unittest.mock.call(self.org_payload["repos_url"])
+        ]
+        self.mock_get.assert_has_calls(expected_calls)
+        self.assertEqual(self.mock_get.call_count, 2)
 
     def test_public_repos_with_license(self) -> None:
         """
-        Tests public_repos method with a license filter.
+        Tests public_repos method with a license filter,
+        ensuring it returns the expected repositories and
+        makes the correct API calls.
         """
+        # Reset mock calls for each test method to ensure accurate counting
+        self.mock_get.reset_mock()
+
         client = GithubOrgClient("google")
         self.assertEqual(client.public_repos("apache-2.0"), self.apache2_repos)
-        self.assertEqual(
-            self.mock_get.call_args_list[0][0][0],
-            "https://api.github.com/orgs/google"
-        )
-        self.assertEqual(
-            self.mock_get.call_args_list[1][0][0],
-            "https://api.github.com/orgs/google/repos"
-        )
-        # Note: Depending on caching within client.org and client.repos_payload,
-        # the call count might vary. If memoize works as expected, these
-        # calls for 'org' and 'repos_payload' should only happen once per instance.
-        # For integration, we expect them to be called on first access.
-        # The specific call count here depends on whether the `public_repos`
-        # method (which calls `repos_payload` which in turn calls `org`)
-        # is part of the memoized setup. Given they are memoized, the counts
-        # reflect the initial fetch.
-        # If test_public_repos runs first, it might consume the first 2 side effects.
-        # This test then re-accesses memoized properties.
-        # For a clean integration test, it's often better to reset call_count
-        # or ensure each test case starts fresh for accurate call count assertion.
-        # For this specific setup, we're assuming setUpClass prepares side_effect
-        # for multiple possible calls within the parameterized class scope.
-        # Resetting mock_get.call_count for each test method:
-        self.mock_get.reset_mock() # Reset after previous test if tests are not isolated enough by parameterized_class
-        client = GithubOrgClient("google") # Re-instantiate for clean state
-        self.assertEqual(client.public_repos("apache-2.0"), self.apache2_repos)
-        self.assertEqual(self.mock_get.call_count, 2) # Should be 2 calls for fresh instance
+
+        # Verify calls (should be the same as without license, as has_license is static)
+        expected_calls = [
+            unittest.mock.call("https://api.github.com/orgs/google"),
+            unittest.mock.call(self.org_payload["repos_url"])
+        ]
+        self.mock_get.assert_has_calls(expected_calls)
+        self.assertEqual(self.mock_get.call_count, 2)
