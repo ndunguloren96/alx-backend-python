@@ -14,16 +14,13 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('The Email field must be set')
         email = self.normalize_email(email)
         
-        # Extract is_staff and is_active from extra_fields if they exist,
-        # otherwise, let them default to False (from AbstractBaseUser) or handle as needed.
-        # We need to remove them from extra_fields so they are not passed to user = self.model()
-        is_staff = extra_fields.pop('is_staff', False) # Default to False if not provided
-        is_active = extra_fields.pop('is_active', True) # Default to True for normal users, common practice
+        # is_staff and is_active are now explicitly defined as models.BooleanField fields
+        # in the User model below. When extra_fields is passed to self.model(),
+        # these values will correctly set the corresponding model fields.
+        # Therefore, we no longer need to pop them or set them manually here.
 
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
-        user.is_staff = is_staff # Set the inherited attribute
-        user.is_active = is_active # Set the inherited attribute
         user.save(using=self._db)
         return user
 
@@ -33,15 +30,13 @@ class CustomUserManager(BaseUserManager):
         """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True) # Superusers are usually active by default
+        extra_fields.setdefault('is_active', True) 
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Superuser must have is_superuser=True.')
         
-        # Call create_user, which will handle setting is_staff and is_active
-        # (after popping them from extra_fields)
         return self.create_user(email, password, **extra_fields)
 
 
@@ -64,10 +59,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=10, choices=USER_ROLES, default='guest', null=False, blank=False)
     created_at = models.DateTimeField(default=timezone.now)
 
-    # Django's AbstractBaseUser already provides 'is_active', 'is_staff', 'is_superuser', 'last_login', 'date_joined' (though 'date_joined' is from AbstractUser, which is why we switched to created_at)
-    # So, you do NOT need to define these fields explicitly here, and you should not pass them as custom fields to self.model()
-    # is_active = models.BooleanField(default=True) # REMOVE - inherited from AbstractBaseUser
-    # is_staff = models.BooleanField(default=False) # REMOVE - inherited from AbstractBaseUser
+    # Re-add these fields explicitly. 
+    # While PermissionsMixin provides them as attributes,
+    # Django's Admin often requires them as explicit model fields 
+    # for list_display and list_filter to work seamlessly.
+    # Also, having them as explicit fields ensures they are properly
+    # created in the database schema.
+    is_active = models.BooleanField(default=True) 
+    is_staff = models.BooleanField(default=False)
+    # is_superuser is provided by PermissionsMixin and typically doesn't need
+    # to be explicitly redefined as a models.BooleanField.
 
 
     # Use the custom manager
@@ -77,14 +78,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     # List of field names that will be prompted for when creating a user via createsuperuser
     # 'email' and 'password' are handled automatically by USERNAME_FIELD and password handling
+    # 'is_active', 'is_staff', 'is_superuser' are typically handled by create_superuser's defaults
+    # but since we explicitly defined is_active and is_staff, they will be handled by the manager
+    # when passed through extra_fields.
     REQUIRED_FIELDS = ['first_name', 'last_name', 'phone_number', 'role'] 
-
-    # Correctly remove the username field if you don't want it from AbstractUser
-    # You're inheriting from AbstractBaseUser now, so username is not a concern,
-    # but explicitly setting it to None if you were using AbstractUser would be correct.
-    # Since you changed to AbstractBaseUser, this specific line (username = None)
-    # is not strictly necessary but harmless.
-    # username = None 
 
     def __str__(self):
         return self.email
