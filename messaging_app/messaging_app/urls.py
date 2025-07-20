@@ -2,7 +2,7 @@
 URL configuration for messaging_app project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
+    https://docs.djangoproject.com/en/5.0/topics/http/urls/
 Examples:
 Function views
     1. Add an import:  from my_app import views
@@ -15,8 +15,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from chats.urls import router as chats_router # Import your router
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include(chats_router.urls)), # Include your API routes
 ]

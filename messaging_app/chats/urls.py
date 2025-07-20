@@ -1,0 +1,10 @@
+from rest_framework.routers import DefaultRouter
+from .views import UserViewSet, ConversationViewSet, MessageViewSet
+
+router = DefaultRouter()
+router.register(r'users', UserViewSet, basename='user')
+router.register(r'conversations', ConversationViewSet, basename='conversation')
+router.register(r'messages', MessageViewSet, basename='message')
+
+# The API URLs are now determined automatically by the router.
+urlpatterns = router.urls
