@@ -6,14 +6,7 @@ import unittest
 from parameterized import parameterized, parameterized_class
 from unittest.mock import patch, Mock, PropertyMock
 from client import GithubOrgClient
-from fixtures import TEST_PAYLOAD
-
-
-# Extract fixtures from TEST_PAYLOAD for clarity in parameterized_class
-org_payload = TEST_PAYLOAD[0][0]
-repos_payload = TEST_PAYLOAD[0][1]
-expected_repos = TEST_PAYLOAD[0][2]
-apache2_repos = TEST_PAYLOAD[0][3]
+from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -47,7 +40,8 @@ class TestGithubOrgClient(unittest.TestCase):
         expected_url = "https://api.github.com/orgs/google/repos"
         payload = {"repos_url": expected_url}
 
-        with patch('client.GithubOrgClient.org', new_callable=PropertyMock) as mock_org:
+        with patch('client.GithubOrgClient.org',
+                   new_callable=PropertyMock) as mock_org:
             mock_org.return_value = payload
             client = GithubOrgClient("google")
             self.assertEqual(client._public_repos_url, expected_url)
@@ -58,7 +52,6 @@ class TestGithubOrgClient(unittest.TestCase):
         Tests that public_repos returns the expected list of repositories
         and that mocked methods are called once.
         """
-        # Define a sample payload for get_json
         repos_payload_mock = [
             {"name": "repo1"},
             {"name": "repo2"},
@@ -66,7 +59,6 @@ class TestGithubOrgClient(unittest.TestCase):
         ]
         mock_get_json.return_value = repos_payload_mock
 
-        # Define a mock URL for _public_repos_url
         public_repos_url = "http://example.com/repos"
 
         with patch('client.GithubOrgClient._public_repos_url',
@@ -125,7 +117,8 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
             mock_response.json.return_value = cls.get_payloads[url]
             return mock_response
 
-        cls.get_patcher = patch('requests.get', side_effect=mock_get_json_side_effect)
+        cls.get_patcher = patch('requests.get',
+                                side_effect=mock_get_json_side_effect)
         cls.mock_get = cls.get_patcher.start()
 
     @classmethod
@@ -167,7 +160,8 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         client = GithubOrgClient("google")
         self.assertEqual(client.public_repos("apache-2.0"), self.apache2_repos)
 
-        # Verify calls (should be the same as without license, as has_license is static)
+        # Verify calls (should be the same as without license, as has_license
+        # is static and does not trigger new API calls)
         expected_calls = [
             unittest.mock.call("https://api.github.com/orgs/google"),
             unittest.mock.call(self.org_payload["repos_url"])
