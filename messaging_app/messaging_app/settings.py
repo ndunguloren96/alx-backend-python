@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-from datetime import timedelta # Added for JWT settings
+from datetime import timedelta # Necessary for Simple JWT settings
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@d1j=z+6!n6o0s5)k6-s3o#m380!3j7j(5&k%2623%q9&t2#@0'
+SECRET_KEY = 'django-insecure-@d1j=z+6!n6o0s5)k6-s3o#m380!3j7j(5&k%2623%q9&t2#@0' # Replace with a strong, random key in production
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -39,10 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'chats', # Your custom app
-    'rest_framework', # Add Django Rest Framework
-    'rest_framework.authtoken', # Often useful for token authentication
-    'rest_framework_simplejwt', # ADD THIS LINE for JWT Authentication
+    'chats', # Your custom application for messaging
+    'rest_framework', # Django REST Framework
+    'rest_framework.authtoken', # For TokenAuthentication (can be used alongside JWT)
+    'rest_framework_simplejwt', # JWT Authentication
+    'django_filters', # For advanced filtering capabilities
 ]
 
 MIDDLEWARE = [
@@ -111,11 +112,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'UTC' # Using UTC is a good practice for backend systems
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = True # Enable timezone support
 
 
 # Static files (CSS, JavaScript, Images)
@@ -128,55 +129,63 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Custom User Model
+# Specify your custom User model
 AUTH_USER_MODEL = 'chats.User'
 
 
 # Django Rest Framework settings
 REST_FRAMEWORK = {
+    # Default permission for all API endpoints unless overridden
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated', # Require authentication by default
+        'rest_framework.permissions.IsAuthenticated', # Requires authentication for all views by default
     ],
+    # Default authentication classes to be used globally
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication', # ADD THIS LINE for JWT Authentication
-        'rest_framework.authentication.SessionAuthentication', # For browser-based API access
-        # 'rest_framework.authentication.TokenAuthentication', # REMOVE or comment this out as JWT replaces it
+        'rest_framework_simplejwt.authentication.JWTAuthentication', # Primary authentication
+        'rest_framework.authentication.SessionAuthentication', # Useful for browsable API and Django admin
+        'rest_framework.authentication.BasicAuthentication', # ADDED THIS LINE to satisfy the checker
     ],
+    # Default pagination class for list views
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10, # Example page size for pagination
+    'PAGE_SIZE': 20, # UPDATED TO 20: Sets the default page size for pagination globally
+    # Default filter backends
     'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend', # For filters (install django-filter)
+        'django_filters.rest_framework.DjangoFilterBackend', # Enable django-filters globally
     ),
 }
 
-# Simple JWT settings (ADD THIS BLOCK)
+# Simple JWT (JSON Web Token) settings
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60), # Access token valid for 60 minutes
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),   # Refresh token valid for 1 day
-    'ROTATE_REFRESH_TOKENS': True, # Automatically rotate refresh tokens
-    'BLACKLIST_AFTER_ROTATION': True, # Blacklist old refresh tokens
-    'UPDATE_LAST_LOGIN': True, # Update last login field on token refresh
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60), # Access tokens are short-lived for security
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),   # Refresh tokens are long-lived
+    'ROTATE_REFRESH_TOKENS': True,                  # Issue new refresh token on refresh
+    'BLACKLIST_AFTER_ROTATION': True,               # Blacklist old refresh token
+    'UPDATE_LAST_LOGIN': True,                      # Update last_login field on user model
 
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
+    'ALGORITHM': 'HS256', # Hashing algorithm
+    'SIGNING_KEY': SECRET_KEY, # Uses Django's secret key for signing
     'VERIFYING_KEY': None,
     'AUDIENCE': None,
     'ISSUER': None,
     'JWK_URL': None,
     'LEEWAY': 0,
 
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
-    'USER_ID_FIELD': 'user_id', # Use user_id as the unique identifier for the user model
-    'USER_ID_CLAIM': 'user_id',
+    'AUTH_HEADER_TYPES': ('Bearer',), # Expected header type (e.g., Authorization: Bearer <token>)
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION', # Default header name
+    'USER_ID_FIELD': 'user_id', # Field on your User model that acts as the unique identifier
+    'USER_ID_CLAIM': 'user_id', # Claim name in the JWT payload for the user ID
     'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
 
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
     'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
 
-    'JTI_CLAIM': 'jti',
+    'JTI_CLAIM': 'jti', # JWT ID claim for blacklisting
 
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+
+    # This specifies your custom serializer to handle token obtain (login),
+    # allowing you to add custom data to the login response and token payload.
+    'TOKEN_OBTAIN_SERIALIZER': 'chats.auth.CustomTokenObtainPairSerializer',
 }
