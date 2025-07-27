@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Django Chat App</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .chat-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 500px;
+        }
+        .chat-header {
+            background-color: #4a90e2;
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            text-align: center;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .message {
+            background-color: #e0f2f7;
+            padding: 10px 15px;
+            border-radius: 8px;
+            align-self: flex-start;
+            max-width: 80%;
+            word-wrap: break-word;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .message.mine {
+            background-color: #dcf8c6;
+            align-self: flex-end;
+        }
+        .message strong {
+            color: #333;
+            font-size: 0.9em;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .message-content {
+            color: #555;
+            font-size: 1em;
+        }
+        .message-timestamp {
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 5px;
+            text-align: right;
+            display: block;
+        }
+        .chat-input {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            background-color: #f9f9f9;
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input input[type="text"] {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .chat-input input[type="text"]:focus {
+            border-color: #4a90e2;
+        }
+        .chat-input button {
+            padding: 12px 20px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .chat-input button:hover {
+            background-color: #357ABD;
+            transform: translateY(-2px);
+        }
+        .chat-input button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .user-info {
+            font-size: 0.9em;
+            color: #eee;
+            text-align: right;
+            margin-top: 5px;
+        }
+        .login-prompt {
+            text-align: center;
+            padding: 20px;
+            color: #555;
+        }
+        .login-prompt a {
+            color: #4a90e2;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .login-prompt a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            Django Chat App
+            {% if user.is_authenticated %}
+                <div class="user-info">Logged in as: {{ user.username }} (Role: {{ user.role|default:"N/A" }})</div>
+            {% endif %}
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            {% if user.is_authenticated %}
+                {% for message in messages %}
+                    <div class="message {% if message.user == user %}mine{% endif %}">
+                        <strong>{{ message.user.username }}</strong>
+                        <span class="message-content">{{ message.message }}</span>
+                        <span class="message-timestamp">{{ message.timestamp|date:"H:i:s M d, Y" }}</span>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="login-prompt">
+                    Please <a href="/admin/login/?next=/chats/">log in</a> to view and send messages.
+                    <p>You can create a superuser by running `python manage.py createsuperuser`.</p>
+                </div>
+            {% endif %}
+        </div>
+        {% if user.is_authenticated %}
+            <form method="post" class="chat-input">
+                {% csrf_token %}
+                <input type="text" name="message" placeholder="Type your message..." required>
+                <button type="submit">Send</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <script>
+        // Scroll to the bottom of the chat messages
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+</body>
+</html>
+
+
