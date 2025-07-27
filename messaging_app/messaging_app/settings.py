@@ -1,3 +1,4 @@
+# messaging_app/settings.py
 """
 Django settings for messaging_app project.
 
@@ -11,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta # Added for JWT settings
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,6 +42,7 @@ INSTALLED_APPS = [
     'chats', # Your custom app
     'rest_framework', # Add Django Rest Framework
     'rest_framework.authtoken', # Often useful for token authentication
+    'rest_framework_simplejwt', # ADD THIS LINE for JWT Authentication
 ]
 
 MIDDLEWARE = [
@@ -135,12 +138,45 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated', # Require authentication by default
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication', # ADD THIS LINE for JWT Authentication
         'rest_framework.authentication.SessionAuthentication', # For browser-based API access
-        'rest_framework.authentication.TokenAuthentication', # For token-based API access (e.g., mobile apps)
+        # 'rest_framework.authentication.TokenAuthentication', # REMOVE or comment this out as JWT replaces it
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10, # Example page size for pagination
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend', # For filters (install django-filter)
     ),
+}
+
+# Simple JWT settings (ADD THIS BLOCK)
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60), # Access token valid for 60 minutes
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),   # Refresh token valid for 1 day
+    'ROTATE_REFRESH_TOKENS': True, # Automatically rotate refresh tokens
+    'BLACKLIST_AFTER_ROTATION': True, # Blacklist old refresh tokens
+    'UPDATE_LAST_LOGIN': True, # Update last login field on token refresh
+
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'user_id', # Use user_id as the unique identifier for the user model
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
+
+    'JTI_CLAIM': 'jti',
+
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
