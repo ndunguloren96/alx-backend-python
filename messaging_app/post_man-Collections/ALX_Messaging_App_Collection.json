@@ -1,0 +1,802 @@
+{
+	"info": {
+		"_postman_id": "b32d2f3b-e7b5-4b0d-9b5f-51d0c5a0f2b3",
+		"name": "ALX Messaging App API Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"description": "Postman Collection for testing the ALX Messaging App API for the implementation of Auth (JWT), Permissions, Pagination, and Filtering.",
+		"version": "1.0.0"
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "1.1 Login (Get JWT Tokens - User1)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"access_token\", jsonData.access);",
+									"pm.environment.set(\"refresh_token\", jsonData.refresh);",
+									"pm.expect(pm.response.status).to.eql(200);",
+									"pm.expect(jsonData.access).to.be.a('string').and.have.lengthOf.at.least(1);",
+									"console.log('User1 Access Token:', pm.environment.get('access_token'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{user1_email}}\",\n    \"password\": \"{{user1_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/token/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"token",
+								""
+							]
+						},
+						"description": "Obtains JWT access and refresh tokens for User1."
+					},
+					"response": []
+				},
+				{
+					"name": "1.2 Login (Get JWT Tokens - User2)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"user2_access_token\", jsonData.access);",
+									"pm.expect(pm.response.status).to.eql(200);",
+									"console.log('User2 Access Token:', pm.environment.get('user2_access_token'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{user2_email}}\",\n    \"password\": \"{{user2_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/token/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"token",
+								""
+							]
+						},
+						"description": "Obtains JWT access and refresh tokens for User2 (for testing multi-user scenarios and permissions)."
+					},
+					"response": []
+				},
+				{
+					"name": "1.3 Login (Get JWT Tokens - User3 for Unauthorized Test)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"user3_access_token\", jsonData.access);",
+									"pm.expect(pm.response.status).to.eql(200);",
+									"console.log('User3 Access Token (for unauthorized tests):', pm.environment.get('user3_access_token'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{user3_email}}\",\n    \"password\": \"{{user3_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/token/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"token",
+								""
+							]
+						},
+						"description": "Obtains JWT access and refresh tokens for User3, who will be used to test unauthorized access."
+					},
+					"response": []
+				},
+				{
+					"name": "1.4 Refresh Access Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"access_token\", jsonData.access);",
+									"pm.expect(pm.response.status).to.eql(200);",
+									"pm.expect(jsonData.access).to.be.a('string').and.have.lengthOf.at.least(1);",
+									"console.log('New Access Token after refresh:', pm.environment.get('access_token'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refresh\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/token/refresh/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"token",
+								"refresh",
+								""
+							]
+						},
+						"description": "Refreshes the JWT access token using the refresh token."
+					},
+					"response": []
+				},
+				{
+					"name": "1.5 Verify Access Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"{{access_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/token/verify/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"token",
+								"verify",
+								""
+							]
+						},
+						"description": "Verifies the validity of the current access token."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Users",
+			"item": [
+				{
+					"name": "2.1 Get All Users (Authenticated)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.expect(pm.response.status).to.eql(200);",
+									"pm.expect(jsonData).to.be.an('array');",
+									"// Store user IDs for later use in conversations",
+									"if (jsonData.length > 0) {",
+									"    pm.environment.set(\"user1_id\", jsonData.find(u => u.email === pm.environment.get('user1_email')).user_id);",
+									"    pm.environment.set(\"user2_id\", jsonData.find(u => u.email === pm.environment.get('user2_email')).user_id);",
+									"    pm.environment.set(\"user3_id\", jsonData.find(u => u.email === pm.environment.get('user3_email')).user_id);",
+									"    console.log('User1 ID:', pm.environment.get('user1_id'));",
+									"    console.log('User2 ID:', pm.environment.get('user2_id'));",
+									"    console.log('User3 ID:', pm.environment.get('user3_id'));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/users/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								""
+							]
+						},
+						"description": "Retrieves a list of all users, requiring authentication. Also captures user IDs for further tests."
+					},
+					"response": []
+				},
+				{
+					"name": "2.2 Get All Users (Unauthorized - Should Fail)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								""
+							]
+						},
+						"description": "Attempts to retrieve users without authentication. Should return 401 Unauthorized."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Conversations",
+			"item": [
+				{
+					"name": "3.1 Create Conversation (User1 with User2)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.expect(pm.response.status).to.eql(201);",
+									"pm.environment.set(\"conversation_id\", jsonData.conversation_id);",
+									"console.log('Created Conversation ID:', pm.environment.get('conversation_id'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"participants\": [\"{{user1_id}}\", \"{{user2_id}}\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/conversations/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								""
+							]
+						},
+						"description": "Creates a new conversation between User1 and User2, authenticated as User1. User1 is automatically added as a participant by the viewset."
+					},
+					"response": []
+				},
+				{
+					"name": "3.2 Get My Conversations (User1)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/conversations/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								""
+							]
+						},
+						"description": "Retrieves conversations where User1 is a participant."
+					},
+					"response": []
+				},
+				{
+					"name": "3.3 Get Specific Conversation (User1 - as participant)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/conversations/{{conversation_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								"{{conversation_id}}",
+								""
+							]
+						},
+						"description": "Retrieves a specific conversation by ID, authenticated as User1 (participant)."
+					},
+					"response": []
+				},
+				{
+					"name": "3.4 Filter Conversations by Participants (User1 & User2)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/conversations/?participants={{user1_id}}&participants={{user2_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								""
+							],
+							"query": [
+								{
+									"key": "participants",
+									"value": "{{user1_id}}"
+								},
+								{
+									"key": "participants",
+									"value": "{{user2_id}}"
+								}
+							]
+						},
+						"description": "Filters conversations to find those including both User1 and User2."
+					},
+					"response": []
+				},
+				{
+					"name": "3.5 Negative: Unauthorized Access to Conversation (User3)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user3_access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/conversations/{{conversation_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								"{{conversation_id}}",
+								""
+							]
+						},
+						"description": "Attempts to access a conversation where User3 is NOT a participant. Should return 403 Forbidden."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Messages",
+			"item": [
+				{
+					"name": "4.1 Send Message (User1 in Conv)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.expect(pm.response.status).to.eql(201);",
+									"pm.environment.set(\"message_id\", jsonData.message_id);",
+									"console.log('Created Message ID:', pm.environment.get('message_id'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message_body\": \"Hello User2! This is User1's first message.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								"{{conversation_id}}",
+								"messages",
+								""
+							]
+						},
+						"description": "Sends a message in the created conversation, authenticated as User1 (the sender and participant)."
+					},
+					"response": []
+				},
+				{
+					"name": "4.2 Send Another Message (User2 in Conv)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user2_access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message_body\": \"Hi User1! User2 here, testing the chat.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								"{{conversation_id}}",
+								"messages",
+								""
+							]
+						},
+						"description": "Sends another message in the conversation, authenticated as User2 (participant, but not the sender of the first message)."
+					},
+					"response": []
+				},
+				{
+					"name": "4.3 Get Messages in Conversation (Paginated, Default 20)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								"{{conversation_id}}",
+								"messages",
+								""
+							]
+						},
+						"description": "Retrieves messages within the conversation, showing default pagination (20 per page)."
+					},
+					"response": []
+				},
+				{
+					"name": "4.4 Get Messages in Conversation (Paginated, Custom Size 5)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/?page_size=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								"{{conversation_id}}",
+								"messages",
+								""
+							],
+							"query": [
+								{
+									"key": "page_size",
+									"value": "5"
+								}
+							]
+						},
+						"description": "Retrieves messages within the conversation with a custom page size (5 per page)."
+					},
+					"response": []
+				},
+				{
+					"name": "4.5 Filter Messages by sent_at_after (adjust timestamp)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/?sent_at_after=2025-07-27T18:00:00Z",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								"{{conversation_id}}",
+								"messages",
+								""
+							],
+							"query": [
+								{
+									"key": "sent_at_after",
+									"value": "2025-07-27T18:00:00Z",
+									"description": "Adjust this timestamp to filter messages sent AFTER a specific time (e.g., your current time minus a few minutes in UTC)."
+								}
+							]
+						},
+						"description": "Filters messages in the conversation to show only those sent after a specific timestamp."
+					},
+					"response": []
+				},
+				{
+					"name": "4.6 Filter Messages by sent_at_before (adjust timestamp)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/?sent_at_before=2025-07-27T20:00:00Z",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								"{{conversation_id}}",
+								"messages",
+								""
+							],
+							"query": [
+								{
+									"key": "sent_at_before",
+									"value": "2025-07-27T20:00:00Z",
+									"description": "Adjust this timestamp to filter messages sent BEFORE a specific time (e.g., your current time plus a few minutes in UTC)."
+								}
+							]
+						},
+						"description": "Filters messages in the conversation to show only those sent before a specific timestamp."
+					},
+					"response": []
+				},
+				{
+					"name": "4.7 Negative: User2 Tries to Update User1's Message",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user2_access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message_body\": \"User2 trying to illegally update User1's message!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/{{message_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								"{{conversation_id}}",
+								"messages",
+								"{{message_id}}",
+								""
+							]
+						},
+						"description": "User2 (participant, not sender) attempts to update a message sent by User1. Should return 403 Forbidden due to IsSenderOrReadOnly."
+					},
+					"response": []
+				},
+				{
+					"name": "4.8 Update Message (As Sender - User1)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message_body\": \"User1's updated message: Testing the PATCH method.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/{{message_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								"{{conversation_id}}",
+								"messages",
+								"{{message_id}}",
+								""
+							]
+						},
+						"description": "User1 (the sender) successfully updates their own message using PATCH."
+					},
+					"response": []
+				},
+				{
+					"name": "4.9 Delete Message (As Sender - User1)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages/{{message_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"conversations",
+								"{{conversation_id}}",
+								"messages",
+								"{{message_id}}",
+								""
+							]
+						},
+						"description": "User1 (the sender) successfully deletes their own message."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000",
+			"type": "string"
+		}
+	]
+}
