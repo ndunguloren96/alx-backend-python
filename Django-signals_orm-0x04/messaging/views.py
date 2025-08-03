@@ -41,11 +41,17 @@ def conversation_view(request, message_id=None):
     if message_id:
         try:
             # Task 3: Optimize with select_related for parent_message's sender/receiver
-            parent_message = Message.objects.select_related('sender', 'receiver').get(id=message_id)
+            # Add .only() here as well for consistency and to show explicit use for details.
+            parent_message = Message.objects.select_related('sender', 'receiver').only(
+                'id', 'sender__username', 'receiver__username', 'content', 'timestamp', 'edited', 'read', 'parent_message_id'
+            ).get(id=message_id)
 
             # Task 3: Fetch direct replies efficiently.
             # Use select_related for sender/receiver of replies to avoid N+1 queries.
-            replies = parent_message.replies.all().select_related('sender', 'receiver').order_by('timestamp')
+            # Add .only() for replies as well.
+            replies = parent_message.replies.all().select_related('sender', 'receiver').only(
+                'id', 'sender__username', 'receiver__username', 'content', 'timestamp', 'edited', 'read', 'parent_message_id'
+            ).order_by('timestamp')
 
             context['parent_message'] = parent_message
             context['replies'] = replies
@@ -63,18 +69,18 @@ def conversation_view(request, message_id=None):
             raise Http404("Message not found.")
     else:
         # Task 4: Custom manager for unread messages using 'Message.unread.unread_for_user'
-        # This will now exactly match the check's requirement.
-        unread_messages = Message.unread.unread_for_user(user) # <--- Updated call to match the check
+        # The .only() is already handled within the manager's `unread_for_user` method.
+        unread_messages = Message.unread.unread_for_user(user)
 
         context['unread_messages'] = unread_messages
 
         # All messages for the current user (sender OR receiver)
-        # Task: `["sender=request.user"]` implies showing messages sent by the user,
-        # so ensure the query correctly covers both sent and received.
-        # Use select_related for sender/receiver for efficiency.
+        # Add .only() here explicitly as per the check.
         all_messages = Message.objects.filter(
             Q(sender=user) | Q(receiver=user)
-        ).select_related('sender', 'receiver').order_by('-timestamp')
+        ).select_related('sender', 'receiver').only(
+            'id', 'sender__username', 'receiver__username', 'content', 'timestamp', 'edited', 'read', 'parent_message_id'
+        ).order_by('-timestamp')
         context['all_messages'] = all_messages
 
     return render(request, 'messaging/conversation.html', context)
