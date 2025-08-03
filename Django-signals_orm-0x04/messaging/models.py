@@ -1,5 +1,13 @@
 from django.db import models
-from django.contrib.auth.models import User # Assuming you'll use Django's built-in User model
+from django.contrib.auth.models import User  # Assuming you'll use Django's built-in User model
+
+# Custom manager for unread messages
+class UnreadMessagesManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(read=False)
+
+    def for_user(self, user):
+        return self.filter(receiver=user, read=False)
 
 class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
@@ -7,16 +15,20 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     edited = models.BooleanField(default=False)
-    read = models.BooleanField(default=False) # Added for Task 4
+    read = models.BooleanField(default=False)  # Added for Task 4
 
     # Self-referential foreign key for replies (Task 3)
     parent_message = models.ForeignKey(
         'self',
-        on_delete=models.SET_NULL, # Or models.CASCADE if you want replies to disappear with parent
+        on_delete=models.SET_NULL,  # Or models.CASCADE if you want replies to disappear with parent
         null=True,
         blank=True,
         related_name='replies'
     )
+
+    # Add the managers
+    objects = models.Manager()  # Default manager
+    unread_messages = UnreadMessagesManager()  # Custom manager for unread messages
 
     class Meta:
         ordering = ['timestamp']
@@ -36,7 +48,6 @@ class Notification(models.Model):
     def __str__(self):
         return f"Notification for {self.user.username}: New message from {self.message.sender.username}"
 
-
 # MessageHistory
 class MessageHistory(models.Model):
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='history')
@@ -49,3 +60,4 @@ class MessageHistory(models.Model):
 
     def __str__(self):
         return f"History for Message {self.message.id} by {self.message.sender.username}"
+
