@@ -8,6 +8,7 @@
         .message-thread { margin-left: 20px; border-left: 2px solid #ccc; padding-left: 10px; }
         .message { border: 1px solid #eee; padding: 10px; margin-bottom: 5px; background-color: #f9f9f9; }
         .unread { background-color: #e6f7ff; font-weight: bold; }
+        .message-history { font-size: 0.8em; color: #555; margin-top: 5px; border-top: 1px dashed #eee; padding-top: 3px; }
     </style>
 </head>
 <body>
@@ -18,6 +19,19 @@
         <div class="message">
             <p><strong>{{ parent_message.sender.username }}:</strong> {{ parent_message.content }}</p>
             <small>{{ parent_message.timestamp }} {% if parent_message.edited %}(Edited){% endif %}</small>
+            {% if parent_message.history.all %}
+                <div class="message-history">
+                    <h4>Edit History:</h4>
+                    <ul>
+                        {% for history_entry in parent_message.history.all %}
+                            <li>
+                                Edited by: {{ history_entry.edited_by.username|default:"N/A" }} on {{ history_entry.edited_at|date:"M d, Y H:i" }}<br>
+                                Original content: "{{ history_entry.old_content|truncatechars:100 }}"
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
         </div>
         {% if replies %}
             <h3>Replies:</h3>
@@ -26,7 +40,19 @@
                     <div class="message">
                         <p><strong>{{ reply.sender.username }}:</strong> {{ reply.content }}</p>
                         <small>{{ reply.timestamp }} {% if reply.edited %}(Edited){% endif %}</small>
-                        {# For deeper nesting, you'd recursively include this template or use a custom tag #}
+                        {% if reply.history.all %}
+                            <div class="message-history">
+                                <h4>Edit History:</h4>
+                                <ul>
+                                    {% for history_entry in reply.history.all %}
+                                        <li>
+                                            Edited by: {{ history_entry.edited_by.username|default:"N/A" }} on {{ history_entry.edited_at|date:"M d, Y H:i" }}<br>
+                                            Original content: "{{ history_entry.old_content|truncatechars:100 }}"
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
                     </div>
                 {% endfor %}
             </div>
@@ -63,6 +89,19 @@
                         {{ message.content|truncatechars:100 }} ({{ message.timestamp|date:"M d, H:i" }})
                         {% if message.edited %}(Edited){% endif %}
                         - <a href="{% url 'conversation_detail' message.id %}">View Thread</a>
+                        {% if message.history.all %}
+                            <div class="message-history">
+                                <h4>Edit History:</h4>
+                                <ul>
+                                    {% for history_entry in message.history.all %}
+                                        <li>
+                                            Edited by: {{ history_entry.edited_by.username|default:"N/A" }} on {{ history_entry.edited_at|date:"M d, Y H:i" }}<br>
+                                            Original content: "{{ history_entry.old_content|truncatechars:100 }}"
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
                     </li>
                 {% endfor %}
             </ul>

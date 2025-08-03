@@ -1,13 +1,7 @@
+# Django-signals_orm-0x04/messaging/models.py
 from django.db import models
-from django.contrib.auth.models import User  # Assuming you'll use Django's built-in User model
-
-# Custom manager for unread messages
-class UnreadMessagesManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(read=False)
-
-    def for_user(self, user):
-        return self.filter(receiver=user, read=False)
+from django.contrib.auth.models import User
+from .managers import UnreadMessagesManager # Import the new manager
 
 class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
@@ -15,20 +9,20 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     edited = models.BooleanField(default=False)
-    read = models.BooleanField(default=False)  # Added for Task 4
+    read = models.BooleanField(default=False) # Added for Task 4
 
     # Self-referential foreign key for replies (Task 3)
     parent_message = models.ForeignKey(
         'self',
-        on_delete=models.SET_NULL,  # Or models.CASCADE if you want replies to disappear with parent
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='replies'
     )
 
-    # Add the managers
-    objects = models.Manager()  # Default manager
-    unread_messages = UnreadMessagesManager()  # Custom manager for unread messages
+    # Custom managers
+    objects = models.Manager() # Default manager
+    unread_messages = UnreadMessagesManager() # Custom manager for unread messages
 
     class Meta:
         ordering = ['timestamp']
@@ -48,11 +42,11 @@ class Notification(models.Model):
     def __str__(self):
         return f"Notification for {self.user.username}: New message from {self.message.sender.username}"
 
-# MessageHistory
 class MessageHistory(models.Model):
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='history')
     old_content = models.TextField()
     edited_at = models.DateTimeField(auto_now_add=True)
+    edited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='edited_messages_history') # Added for the check
 
     class Meta:
         ordering = ['-edited_at']
@@ -60,4 +54,3 @@ class MessageHistory(models.Model):
 
     def __str__(self):
         return f"History for Message {self.message.id} by {self.message.sender.username}"
-

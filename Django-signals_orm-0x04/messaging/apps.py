@@ -1,3 +1,4 @@
+# Django-signals_orm-0x04/messaging/apps.py
 from django.apps import AppConfig
 
 class MessagingConfig(AppConfig):
