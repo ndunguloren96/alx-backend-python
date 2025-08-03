@@ -25,3 +25,17 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user.username}: New message from {self.message.sender.username}"
+
+
+# MessageHistory
+class MessageHistory(models.Model):
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='history')
+    old_content = models.TextField()
+    edited_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-edited_at']
+        verbose_name_plural = "Message Histories"
+
+    def __str__(self):
+        return f"History for Message {self.message.id} by {self.message.sender.username}"
