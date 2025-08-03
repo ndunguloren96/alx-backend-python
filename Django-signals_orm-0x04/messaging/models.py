@@ -6,7 +6,17 @@ class Message(models.Model):
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
-    edited = models.BooleanField(default=False) # Added for Task 1
+    edited = models.BooleanField(default=False)
+    read = models.BooleanField(default=False) # Added for Task 4
+
+    # Self-referential foreign key for replies (Task 3)
+    parent_message = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL, # Or models.CASCADE if you want replies to disappear with parent
+        null=True,
+        blank=True,
+        related_name='replies'
+    )
 
     class Meta:
         ordering = ['timestamp']

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversations</title>
+    <style>
+        .message-thread { margin-left: 20px; border-left: 2px solid #ccc; padding-left: 10px; }
+        .message { border: 1px solid #eee; padding: 10px; margin-bottom: 5px; background-color: #f9f9f9; }
+        .unread { background-color: #e6f7ff; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Conversations</h1>
+
+    {% if parent_message %}
+        <h2>Thread for Message by {{ parent_message.sender.username }}</h2>
+        <div class="message">
+            <p><strong>{{ parent_message.sender.username }}:</strong> {{ parent_message.content }}</p>
+            <small>{{ parent_message.timestamp }} {% if parent_message.edited %}(Edited){% endif %}</small>
+        </div>
+        {% if replies %}
+            <h3>Replies:</h3>
+            <div class="message-thread">
+                {% for reply in replies %}
+                    <div class="message">
+                        <p><strong>{{ reply.sender.username }}:</strong> {{ reply.content }}</p>
+                        <small>{{ reply.timestamp }} {% if reply.edited %}(Edited){% endif %}</small>
+                        {# For deeper nesting, you'd recursively include this template or use a custom tag #}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No replies yet.</p>
+        {% endif %}
+        <p><a href="{% url 'conversation_list' %}">Back to All Conversations</a></p>
+    {% else %}
+        <h2>Your Conversations</h2>
+
+        <h3>Unread Messages</h3>
+        {% if unread_messages %}
+            <ul>
+                {% for message in unread_messages %}
+                    <li class="unread">
+                        From: {{ message.sender.username }} | Content: {{ message.content }} | <a href="{% url 'conversation_detail' message.id %}">View Thread</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No unread messages.</p>
+        {% endif %}
+
+        <h3>All Messages (Received or Sent)</h3>
+        {% if all_messages %}
+            <ul>
+                {% for message in all_messages %}
+                    <li class="message {% if message.receiver == request.user and not message.read %}unread{% endif %}">
+                        {% if message.sender == request.user %}
+                            You to {{ message.receiver.username }}:
+                        {% else %}
+                            {{ message.sender.username }} to You:
+                        {% endif %}
+                        {{ message.content|truncatechars:100 }} ({{ message.timestamp|date:"M d, H:i" }})
+                        {% if message.edited %}(Edited){% endif %}
+                        - <a href="{% url 'conversation_detail' message.id %}">View Thread</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>You have no messages yet.</p>
+        {% endif %}
+    {% endif %}
+</body>
+</html>
