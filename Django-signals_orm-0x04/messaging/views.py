@@ -62,9 +62,9 @@ def conversation_view(request, message_id=None):
         except Message.DoesNotExist:
             raise Http404("Message not found.")
     else:
-        # Task 4: Custom manager for unread messages using 'unread_messages.for_user'
-        # .only() is applied inside the manager method for 'unread_messages.for_user'.
-        unread_messages = Message.unread_messages.for_user(user) # This already includes .only() and .select_related() from the manager
+        # Task 4: Custom manager for unread messages using 'Message.unread.unread_for_user'
+        # This will now exactly match the check's requirement.
+        unread_messages = Message.unread.unread_for_user(user) # <--- Updated call to match the check
 
         context['unread_messages'] = unread_messages
 

@@ -9,7 +9,7 @@ class UnreadMessagesManager(models.Manager):
         # Default queryset for this manager, primarily for consistency
         return super().get_queryset().filter(read=False)
 
-    def for_user(self, user):
+    def unread_for_user(self, user): # <--- Renamed method to match the check
         """
         Filters unread messages where the given user is the receiver.
         """

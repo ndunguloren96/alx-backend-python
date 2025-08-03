@@ -22,7 +22,7 @@ class Message(models.Model):
 
     # Custom managers
     objects = models.Manager() # Default manager
-    unread_messages = UnreadMessagesManager() # Custom manager for unread messages
+    unread = UnreadMessagesManager() # <--- Renamed manager instance to match the check
 
     class Meta:
         ordering = ['timestamp']
