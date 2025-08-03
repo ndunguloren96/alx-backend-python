@@ -1,5 +1,6 @@
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
+from django.contrib.auth.models import User # Import User model
 from .models import Message, Notification, MessageHistory # Import MessageHistory for Task 1
 
 @receiver(post_save, sender=Message)
@@ -38,3 +39,23 @@ def log_message_old_content(sender, instance, **kwargs):
         except sender.DoesNotExist:
             pass # Object is new, or not found (shouldn't happen for updates)
 
+
+
+@receiver(post_delete, sender=User)
+def cleanup_user_data(sender, instance, **kwargs):
+    """
+    Signal handler to clean up all associated data when a User is deleted.
+    Note: With CASCADE delete on ForeignKeys, much of this is handled automatically.
+    This signal serves to confirm or perform additional non-cascading cleanup.
+    """
+    # Messages sent by the user will be deleted by CASCADE on Message.sender
+    # Messages received by the user will be deleted by CASCADE on Message.receiver
+    # Notifications for the user will be deleted by CASCADE on Notification.user
+    # MessageHistory entries will be deleted by CASCADE if their associated Message is deleted.
+
+    # Example of what you *could* do if CASCADE wasn't used or for other actions:
+    # Message.objects.filter(Q(sender=instance) | Q(receiver=instance)).delete()
+    # Notification.objects.filter(user=instance).delete()
+    # No need to explicitly delete MessageHistory here if Message has CASCADE
+
+    print(f"User {instance.username} (ID: {instance.id}) deleted. Associated data (messages, notifications) are handled by CASCADE or custom logic.")
