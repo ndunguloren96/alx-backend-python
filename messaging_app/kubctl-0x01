@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "Scaling Django app deployment to 3 replicas..."
+kubectl scale deployment/django-messaging-app --replicas=3
+
+echo "Verifying that multiple pods are running..."
+kubectl get pods
+
+echo "Monitoring resource usage of the pods..."
+# NOTE: The 'kubectl top' command requires the Metrics Server to be enabled.
+# Run 'minikube addons enable metrics-server' if this fails.
+kubectl top pods
+
+echo "To perform load testing, please install 'wrk' and run the following command manually:"
+echo "wrk -t4 -c100 -d30s http://<service-ip>:8000"
+echo "You will need to use 'minikube service django-messaging-service --url' to get the correct IP and port."
