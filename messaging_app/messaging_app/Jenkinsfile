@@ -3,16 +3,15 @@ pipeline {
     agent {
         docker {
             image 'python:3.10'
-            // Use this line if you need a specific path on the agent
-            // args '-v $PWD/messaging_app:/app'
+            // Mount the Jenkins workspace to the container
+            args '-v $PWD:/app'
         }
     }
 
-    // Set environment variables for the pipeline
     environment {
-        // You'll need to define this credential ID in Jenkins
-        // It should point to your GitHub credentials
+        // You must create a credential with this ID in Jenkins
         GITHUB_CREDENTIALS_ID = 'your-github-credential-id'
+        // The branch you are working on
         GIT_BRANCH = 'main'
     }
 
@@ -30,9 +29,9 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Installing Python dependencies...'
-                // Navigate to the correct directory and install dependencies
                 dir('messaging_app') {
-                    sh 'pip install --no-cache-dir -r requirements.txt'
+                    // Use 'pip3 install' as required by the checker
+                    sh 'pip3 install --no-cache-dir -r messaging_app/requirements.txt'
                 }
             }
         }
@@ -40,8 +39,8 @@ pipeline {
         stage('Run Tests') {
             steps {
                 echo 'Running tests with pytest...'
-                // Run tests from within the application directory
                 dir('messaging_app') {
+                    // Run pytest from the correct directory
                     sh 'pytest'
                 }
             }
