@@ -1,31 +1,65 @@
 // Jenkinsfile for the Django Messaging App CI Pipeline
 pipeline {
-    // This tells Jenkins to run the pipeline inside a Docker container
-    // using the official Python 3.10 image.
     agent {
         docker {
             image 'python:3.10'
+            // Use this line if you need a specific path on the agent
+            // args '-v $PWD/messaging_app:/app'
         }
     }
 
+    // Set environment variables for the pipeline
+    environment {
+        // You'll need to define this credential ID in Jenkins
+        // It should point to your GitHub credentials
+        GITHUB_CREDENTIALS_ID = 'your-github-credential-id'
+        GIT_BRANCH = 'main'
+    }
+
     stages {
+        stage('Checkout Source Code') {
+            steps {
+                echo 'Cloning the repository from GitHub...'
+                // This step uses the Git SCM plugin to clone the repo
+                git branch: GIT_BRANCH,
+                    credentialsId: GITHUB_CREDENTIALS_ID,
+                    url: 'https://github.com/alx-backend-python/messaging_app.git'
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 echo 'Installing Python dependencies...'
-                // Since the agent is already a Python container, we can directly use pip.
-                sh 'pip install --no-cache-dir -r requirements.txt'
+                // Navigate to the correct directory and install dependencies
+                dir('messaging_app') {
+                    sh 'pip install --no-cache-dir -r requirements.txt'
+                }
             }
         }
 
         stage('Run Tests') {
             steps {
                 echo 'Running tests with pytest...'
-                // Run pytest directly inside the Python container.
-                sh 'pytest'
+                // Run tests from within the application directory
+                dir('messaging_app') {
+                    sh 'pytest'
+                }
+            }
+        }
+
+        stage('Generate Test Report') {
+            steps {
+                echo 'Generating and archiving test reports...'
+                dir('messaging_app') {
+                    // This command runs tests and outputs a JUnit XML report
+                    sh 'pytest --junitxml=test-reports/results.xml'
+                    // This step archives the generated report
+                    junit 'test-reports/results.xml'
+                }
             }
         }
     }
-    
+
     post {
         always {
             echo 'Pipeline finished!'
